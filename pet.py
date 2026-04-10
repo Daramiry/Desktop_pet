@@ -1,0 +1,102 @@
+import tkinter as tk
+import random
+from PIL import Image, ImageTk
+import time
+
+# DesktopPet class controls the pet's behavior and animations
+
+class DesktopPet:
+    def __init__(self):
+        self.root = tk.Tk()
+
+# Turn these one to remove the window view
+#-----------------------------------------------------------------------------------------------
+        self.root.overrideredirect(True)
+        self.root.attributes('-topmost', True)
+        self.root.wm_attributes('-transparentcolor', 'black')
+#-----------------------------------------------------------------------------------------------
+        
+        self.canvas = tk.Canvas(self.root, bg='black', highlightthickness=0)
+        self.canvas.pack()
+        
+        # Load entering animation frames (startup sequence)
+
+        self.enter_frames = [
+            tk.PhotoImage(file='sprites/Goku_sprite_Entering1.png'),
+            tk.PhotoImage(file='sprites/Goku_sprite_Entering2.png'),
+            tk.PhotoImage(file='sprites/Goku_sprite_Entering3.png')
+        ]
+        self.current_frame = 0
+        self.pet = self.canvas.create_image(25, 37, image=self.enter_frames[self.current_frame])
+
+        # Start the entering animation
+
+        self.animate_enter()
+        
+        self.root.geometry('50x75+900+540')
+        self.root.mainloop()
+
+    def move(self):
+        # Keeps Pet stationary for now in center screen
+        self.root.geometry('50x75+960+540')
+
+    def animate_enter(self):
+        # Start the entering Animation once
+
+        self.current_frame = 0
+        self.canvas.itemconfig(self.pet, image=self.enter_frames [self.current_frame])
+        # Wait 0.8 s before starting the animation so frame 1 is visable
+
+        self.root.after(500, self._animate_enter_step)
+
+    def _animate_enter_step(self):
+        if self.current_frame < len(self.enter_frames) - 1:
+            self.current_frame += 1
+            self.canvas.itemconfig(self.pet, image=self.enter_frames[self.current_frame])
+            self.root.after(500, self._animate_enter_step)
+        else:
+            # Hold the last frame briefly, then switch to idle
+
+            self.root.after(350, self.start_idle)
+    
+    def start_idle(self):
+
+        self.pet_img = tk.PhotoImage(file='sprites/Goku_sprite_Idle.png')
+        self.canvas.itemconfig(self.pet, image=self.pet_img)
+
+            # Smoothly fades between two frames for natural transitions
+
+    def fade_transition(self, from_path, to_path, steps=10, delay=2e-2):
+
+        # Load both images with transparency
+        from_img = Image.open(from_path).convert("RGBA")
+        to_img = Image.open(to_path).convert("RGBA")
+
+        # Create a transparent background the same size as your sprites
+        base = Image.new("RGBA", from_img.size, (0, 0, 0, 0))
+        
+        for i in range(steps + 1):
+            t = i / steps
+            # Ease-in-out curve for page-flip feel
+            alpha = (3 - 2*t) * t*t
+            blended = Image.blend(from_img, to_img, alpha)
+
+            frame = base.copy()
+            frame.paste(blended, (0, 0), blended)
+
+            tk_img = ImageTk.PhotoImage(frame)
+            self.canvas.itemconfig(self.pet, image=tk_img)
+            self.root.update()
+
+            # Slightly longer pause at start and end
+            time.sleep(delay * (0.5 + abs(0.5 - t)))
+
+        self.pet_img = ImageTk.PhotoImage(to_img)
+        self.canvas.itemconfig(self.pet, image=self.pet_img)
+        self.root.update()
+
+        self.canvas.itemconfig(self.pet, image=self.pet_img)
+
+
+
+DesktopPet()
